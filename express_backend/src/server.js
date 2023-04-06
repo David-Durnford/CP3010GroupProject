@@ -10,7 +10,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true}));
 const port = 8000;
-const dbName = 'trivia';
 
 app.get('/api/fetchQuestions', async (req, res) => {
     fetch(process.env.QUESTIONSAPI)
@@ -23,7 +22,6 @@ app.get('/api/fetchQuestions', async (req, res) => {
             console.log(data)
             const client = new MongoClient(process.env.MONGO_CONNECT);
             await client.connect();
-            const db = client.db(dbName);
             await db.collection('questions').insertMany(data);
 
             res.send('Questions successfully fetched')
@@ -38,12 +36,32 @@ app.post('/api/submitAnswers', async (req, res) => {
 })
 
 app.post('/api/login', async (req, res) => {
-    //TODO - Implement
+    const { email, password} = req.body
+    await mongoose.connect(process.env.MONGO_CONNECT)
+
+    try{
+        const findUser = await User.find({email: email})
+        if(findUser.length !== 0){
+            bcrypt
+                .compare(password, findUser[0].password)
+                .then((result) => {
+                    if(result){
+                        res.send(findUser)
+                    }else{
+                        res.send("Incorrect username/password combination")
+                    }
+                })
+        }else {
+            res.send("Incorrect username/password combination")
+        }
+    }catch (err) {
+        console.log(err)
+    }
 })
 
 app.post('/api/register', async (req, res) => {
     const { name, email, password} = req.body
-    await mongoose.connect(process.env.MONGO_CONNECT+'/'+dbName)
+    await mongoose.connect(process.env.MONGO_CONNECT)
 
     try{
         const findUser = await User.find({email: email})
