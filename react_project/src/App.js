@@ -14,8 +14,7 @@ function App() {
             <Navbar />
             <Router>
                 <Routes>
-                    <Route path="/daily-trivia-game" element={<DailyTriviaGame />} />
-                    <Route path="/" element={<LoginSignup />} />
+                    <Route path="/" element={<DailyTriviaGame />} />
                 </Routes>
             </Router>
         </MDBContainer>
