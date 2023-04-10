@@ -4,6 +4,7 @@ import {MongoClient } from 'mongodb';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import User from "./User.js";
+import Question from "./Question.js";
 dotenv.config();
 
 const app = express();
@@ -20,9 +21,8 @@ app.get('/api/fetchQuestions', async (req, res) => {
                 dataElement['date'] = `${currDate.getFullYear()}-${currDate.getMonth() + 1}-${currDate.getDate()}`;
             }
             console.log(data)
-            const client = new MongoClient(process.env.MONGO_CONNECT);
-            await client.connect();
-            await db.collection('questions').insertMany(data);
+            await mongoose.connect(process.env.MONGO_CONNECT)
+            await Question.insertMany(data)
 
             res.send('Questions successfully fetched')
         })
