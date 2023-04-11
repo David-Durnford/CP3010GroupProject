@@ -15,8 +15,18 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     score: {
-        type: Number,
-        required: true
+        total: {
+            type: Number,
+            required: true
+        },
+        perfectScore: {
+            type: Number,
+            required: true
+        },
+        gamesPlayed: {
+            type: Number,
+            required: true
+        }
     },
     dateCreated: {
         type: String,
