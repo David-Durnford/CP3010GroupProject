@@ -1,25 +1,45 @@
 import './App.css';
-import LoginSignup from "./pages/LoginSignup";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import DailyTriviaGame from "./pages/Components/DailyTriviaGame";
 import Navbar from "./pages/Components/Navbar";
-import {useEffect, useState} from "react";
-import {MDBContainer} from "mdb-react-ui-kit";
-
+import { useEffect, useState } from "react";
+import { MDBContainer } from "mdb-react-ui-kit";
 
 function App() {
+    const [playerData, setPlayerData] = useState(null);
+
+    useEffect(() => {
+        const loadDataFromLocalStorage = () => {
+            const storedData = localStorage.getItem("playerData");
+            if (storedData) {
+                setPlayerData(JSON.parse(storedData));
+            } else {
+                const newData = {
+                    name: "loggedInUser",
+                    email: "loggedInUser",
+                    totalScore: 0,
+                    totalPlayed: 0,
+                    perfectGames: 0,
+                };
+                localStorage.setItem("playerData", JSON.stringify(newData));
+                setPlayerData(newData);
+            }
+        };
+
+        loadDataFromLocalStorage();
+    }, []);
+
+    console.log(playerData);
+
     return (
-        // insert the latest version of Router here
         <MDBContainer>
             <Navbar />
             <Router>
                 <Routes>
-                    <Route path="/daily-trivia-game" element={<DailyTriviaGame />} />
-                    <Route path="/" element={<LoginSignup />} />
+                    <Route path="/" element={<DailyTriviaGame playerData={playerData} setPlayerData={setPlayerData} />} />
                 </Routes>
             </Router>
         </MDBContainer>
-
     );
 }
 

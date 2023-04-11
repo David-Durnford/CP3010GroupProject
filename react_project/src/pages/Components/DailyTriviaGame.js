@@ -17,11 +17,14 @@ import {
     MDBModalTitle,
     MDBProgress,
     MDBProgressBar,
-    MDBRow
+    MDBRow, MDBTable, MDBTableBody, MDBTableHead
 } from "mdb-react-ui-kit";
 import Login from "./Login";
+import UserDataDisplay from './UserDataDisplay';
 
-function DailyTriviaGame() {
+
+
+function DailyTriviaGame( {playerData, setPlayerData} ) {
     const [allQuestions, setAllQuestions] = useState([]);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [userScore, setUserScore] = useState(0);
@@ -29,16 +32,32 @@ function DailyTriviaGame() {
     const [quizStarted, setQuizStarted] = useState(false);
     const [basicModal, setBasicModal] = useState(true);
 
+
     const toggleShow = () => setBasicModal(!basicModal);
 
+
+    const fetchQuestions = async () => {
+        const response = await fetch('https://the-trivia-api.com/api/questions/');
+        const data = await response.json();
+
+        const formattedQuestions = data.map((question) => ({
+            ...question,
+            incorrectAnswers: question.incorrectAnswers,
+            correctAnswer: question.correctAnswer,
+        }));
+
+        setAllQuestions(formattedQuestions);
+    };
+
+
+
     useEffect(() => {
-        async function fetchQuestions() {
-            const response = await fetch('https://the-trivia-api.com/api/questions/');
-            const data = await response.json();
-            setAllQuestions(data);
-        }
         fetchQuestions();
     }, []);
+
+
+
+
 
     const handleAnswer = (answer) => {
         if (answer === allQuestions[currentQuestion].correctAnswer) {
@@ -48,17 +67,33 @@ function DailyTriviaGame() {
         if (currentQuestion === 9) {
             setCurrentQuestion(currentQuestion + 1);
             setCheckGameOver(true);
+            updatePlayerData(); // Call this function when the game is over
         } else {
             setCurrentQuestion(currentQuestion + 1);
         }
     };
 
+    const updatePlayerData = () => {
+        const newPlayerData = {
+            ...playerData,
+            totalPlayed: playerData.totalPlayed + 1,
+            totalScore: playerData.totalScore + userScore,
+            perfectGames: userScore === 10 ? playerData.perfectGames + 1 : playerData.perfectGames,
+        };
+        setPlayerData(newPlayerData);
+        localStorage.setItem("playerData", JSON.stringify(newPlayerData));
+    };
+
     const showQuizContent = () => {
         if (!quizStarted) {
             return (
-                <MDBBtn className='bg-warning' onClick={() => setQuizStarted(true)}>
-                    Start Quiz
-                </MDBBtn>
+                <>
+                    <UserDataDisplay playerData={playerData} setPlayerData={setPlayerData}/>
+                    <MDBBtn className='bg-warning' onClick={() => setQuizStarted(true)}>
+                        Start Quiz
+                    </MDBBtn>
+                </>
+
             );
         }
 
@@ -97,6 +132,7 @@ function DailyTriviaGame() {
     };
 
     const showGameOver = () => (
+    <>
 
     <MDBCard alignment='center' className='w-25 m-auto'>
         <MDBCardBody>
@@ -105,7 +141,21 @@ function DailyTriviaGame() {
             <MDBCardText>Check back tomorrow for a new Trivia Quiz! </MDBCardText>
         </MDBCardBody>
     </MDBCard>
-    );
+    <UserDataDisplay playerData={playerData} setPlayerData={setPlayerData}/>
+    </>
+
+);
+    const updateUserData = () => {
+        const newPlayerData = {
+            ...playerData,
+            totalPlayed: playerData.totalPlayed + 1,
+            totalScore: playerData.totalScore + userScore,
+            perfectGames: userScore === 10 ? playerData.perfectGames + 1 : playerData.perfectGames,
+        };
+        setPlayerData(newPlayerData);
+        localStorage.setItem("playerData", JSON.stringify(newPlayerData));
+    };
+
 
     const calculateProgress = () => {
         return ((currentQuestion / 10) * 100);
