@@ -1,17 +1,20 @@
-import React from 'react';
-import { MDBBadge, MDBTable, MDBTableBody, MDBTableHead } from 'mdb-react-ui-kit';
+import React, {useState} from 'react';
+import {MDBBadge, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
 
-const UserDataDisplay = ({ playerData, setPlayerData }) => {
+const UserDataDisplay = ({playerData, currentStats, setCurrentStats}) => {
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     if (!playerData) {
         return null;
     }
+    let averageScore = currentStats.gamesPlayed ? (currentStats.total / currentStats.gamesPlayed).toFixed(1) : 0;
 
-    console.log("UserDataDisplay ..........................................................");
-    console.log(playerData);
-
-    const averageScore = playerData.totalPlayed ? (playerData.totalScore / playerData.totalPlayed).toFixed(1) : 0;
-
+    if (!dataLoaded){
+        fetchScores(playerData, setDataLoaded)
+            .then(() => {
+                setCurrentStats(JSON.parse(localStorage.getItem("score")));
+            })
+    }
     return (
         <MDBTable align="middle">
             <MDBTableHead>
@@ -29,7 +32,7 @@ const UserDataDisplay = ({ playerData, setPlayerData }) => {
                             <img
                                 src="https://feedback.seekingalpha.com/s/cache/6a/4e/6a4e1d533d0a585e46bd62f330deb221.png"
                                 alt=""
-                                style={{ width: "45px", height: "45px" }}
+                                style={{width: "45px", height: "45px"}}
                                 className="rounded-circle"
                             />
                             <div className="ms-3">
@@ -40,7 +43,7 @@ const UserDataDisplay = ({ playerData, setPlayerData }) => {
                     </td>
                     <td>
                         <MDBBadge color="warning" pill>
-                            {playerData.totalPlayed}
+                            {currentStats.gamesPlayed}
                         </MDBBadge>
                     </td>
                     <td>
@@ -50,7 +53,7 @@ const UserDataDisplay = ({ playerData, setPlayerData }) => {
                     </td>
                     <td>
                         <MDBBadge color="warning" pill>
-                            {playerData.perfectGames}
+                            {currentStats.perfectScore}
                         </MDBBadge>
                     </td>
                 </tr>
@@ -58,5 +61,21 @@ const UserDataDisplay = ({ playerData, setPlayerData }) => {
         </MDBTable>
     );
 };
+
+const fetchScores = async (playerData, setDataLoaded) => {
+    setDataLoaded(true);
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", "Bearer " + playerData.token);
+    const requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+    const scores = await fetch("/score/getScore", requestOptions);
+    const scoresJson = await scores.json();
+    const scoresData = JSON.stringify(scoresJson.data.score);
+    localStorage.setItem("score", scoresData);
+};
+
 
 export default UserDataDisplay;

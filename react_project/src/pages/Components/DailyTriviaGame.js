@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     MDBBadge,
     MDBBtn,
@@ -6,7 +6,6 @@ import {
     MDBCardBody,
     MDBCardText,
     MDBCardTitle,
-    MDBCol,
     MDBContainer,
     MDBModal,
     MDBModalBody,
@@ -16,31 +15,32 @@ import {
     MDBModalHeader,
     MDBModalTitle,
     MDBProgress,
-    MDBProgressBar,
-    MDBRow, MDBTable, MDBTableBody, MDBTableHead
+    MDBProgressBar
 } from "mdb-react-ui-kit";
 import Login from "./Login";
 import UserDataDisplay from './UserDataDisplay';
 
 
-
-function DailyTriviaGame( {playerData, setPlayerData} ) {
+function DailyTriviaGame({playerData, setPlayerData, basicModal, setBasicModal}) {
     const [allQuestions, setAllQuestions] = useState([]);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [userScore, setUserScore] = useState(0);
     const [checkGameOver, setCheckGameOver] = useState(false);
     const [quizStarted, setQuizStarted] = useState(false);
-    const [basicModal, setBasicModal] = useState(true);
+    const [register, setRegister] = useState(false);
+    const [fetchUpdateScore, setFetchUpdateScore] = useState(false);
+    const [currentStats, setCurrentStats] = useState({total: 0, gamesPlayed: 0, perfectScore: 0});
+
 
 
     const toggleShow = () => setBasicModal(!basicModal);
 
 
     const fetchQuestions = async () => {
-        const response = await fetch('https://the-trivia-api.com/api/questions/');
+        const response = await fetch('/questions/getDailyQuestions');
         const data = await response.json();
 
-        const formattedQuestions = data.map((question) => ({
+        const formattedQuestions = data.data.map((question) => ({
             ...question,
             incorrectAnswers: question.incorrectAnswers,
             correctAnswer: question.correctAnswer,
@@ -50,13 +50,9 @@ function DailyTriviaGame( {playerData, setPlayerData} ) {
     };
 
 
-
     useEffect(() => {
         fetchQuestions();
     }, []);
-
-
-
 
 
     const handleAnswer = (answer) => {
@@ -67,32 +63,51 @@ function DailyTriviaGame( {playerData, setPlayerData} ) {
         if (currentQuestion === 9) {
             setCurrentQuestion(currentQuestion + 1);
             setCheckGameOver(true);
-            updatePlayerData(); // Call this function when the game is over
+            updatePlayerData(); //// Call this function when the game is over
+            localStorage.setItem("attemptedDate", new Date().toLocaleDateString());
         } else {
             setCurrentQuestion(currentQuestion + 1);
         }
     };
 
-    const updatePlayerData = () => {
-        const newPlayerData = {
-            ...playerData,
-            totalPlayed: playerData.totalPlayed + 1,
-            totalScore: playerData.totalScore + userScore,
-            perfectGames: userScore === 10 ? playerData.perfectGames + 1 : playerData.perfectGames,
+    const updatePlayerData = async () => {
+        let myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Authorization", "Bearer " + playerData.token);
+        const raw = JSON.stringify({"score": userScore});
+        const requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow'
         };
-        setPlayerData(newPlayerData);
-        localStorage.setItem("playerData", JSON.stringify(newPlayerData));
+        const data = await fetch("/score/submitAnswers", requestOptions)
+        const result = await data.json()
+        setFetchUpdateScore(result)
     };
+    useEffect(() => {
+        if (fetchUpdateScore.success === true) {
+            localStorage.setItem("score", JSON.stringify(fetchUpdateScore.data));
+        }
+    }, [fetchUpdateScore])
+
 
     const showQuizContent = () => {
         if (!quizStarted) {
             return (
-                <>
-                    <UserDataDisplay playerData={playerData} setPlayerData={setPlayerData}/>
-                    <MDBBtn className='bg-warning' onClick={() => setQuizStarted(true)}>
-                        Start Quiz
-                    </MDBBtn>
-                </>
+                localStorage.getItem("attemptedDate") !== new Date().toLocaleDateString() ?
+                    <>
+                        <UserDataDisplay playerData={playerData} currentStats={currentStats} setCurrentStats={setCurrentStats}/>
+                        <MDBBtn className='bg-warning' onClick={() => setQuizStarted(true)}>
+                            Start Quiz
+                        </MDBBtn>
+                    </> :
+                    <>
+                        <UserDataDisplay playerData={playerData} currentStats={currentStats} setCurrentStats={setCurrentStats}/>
+                        <MDBBtn className='bg-warning' onClick={() => setQuizStarted(false)}>
+                            Quiz Already Attempted Please Try Again Tomorrow
+                        </MDBBtn>
+                    </>
 
             );
         }
@@ -120,7 +135,8 @@ function DailyTriviaGame( {playerData, setPlayerData} ) {
                     <ul className="mt-5">
                         {options.map((option, index) => (
                             <div className="p-1" key={index}>
-                                <MDBBtn outline rounded className='mx-2 text-lg-center' color='secondary' onClick={() => handleAnswer(option)}>
+                                <MDBBtn outline rounded className='mx-2 text-lg-center' color='secondary'
+                                        onClick={() => handleAnswer(option)}>
                                     {option}
                                 </MDBBtn>
                             </div>
@@ -132,40 +148,32 @@ function DailyTriviaGame( {playerData, setPlayerData} ) {
     };
 
     const showGameOver = () => (
-    <>
+        <>
 
-    <MDBCard alignment='center' className='w-25 m-auto'>
-        <MDBCardBody>
-            <MDBCardTitle>You scored</MDBCardTitle>
-            <MDBBadge className='bg-warning mb-3'><h2>{userScore}/10</h2></MDBBadge>
-            <MDBCardText>Check back tomorrow for a new Trivia Quiz! </MDBCardText>
-        </MDBCardBody>
-    </MDBCard>
-    <UserDataDisplay playerData={playerData} setPlayerData={setPlayerData}/>
-    </>
-
-);
-    const updateUserData = () => {
-        const newPlayerData = {
-            ...playerData,
-            totalPlayed: playerData.totalPlayed + 1,
-            totalScore: playerData.totalScore + userScore,
-            perfectGames: userScore === 10 ? playerData.perfectGames + 1 : playerData.perfectGames,
-        };
-        setPlayerData(newPlayerData);
-        localStorage.setItem("playerData", JSON.stringify(newPlayerData));
-    };
+            <MDBCard alignment='center' className='w-25 m-auto'>
+                <MDBCardBody>
+                    <MDBCardTitle>You scored</MDBCardTitle>
+                    <MDBBadge className='bg-warning mb-3'><h2>{userScore}/10</h2></MDBBadge>
+                    <MDBCardText>Check back tomorrow for a new Trivia Quiz! </MDBCardText>
+                </MDBCardBody>
+            </MDBCard>
+            <UserDataDisplay playerData={playerData} currentStats={currentStats} setCurrentStats={setCurrentStats}/>
+        </>
+    );
 
 
     const calculateProgress = () => {
         return ((currentQuestion / 10) * 100);
     };
 
+
+
+
     return (
         <>
             <MDBContainer className="p-3 bg-light mt-4">
                 <MDBProgress height='10'>
-                    <MDBProgressBar width={calculateProgress()} valuemin={0} valuemax={100} bgColor="warning"  />
+                    <MDBProgressBar width={calculateProgress()} valuemin={0} valuemax={100} bgColor="warning"/>
                 </MDBProgress>
             </MDBContainer>
             <MDBContainer className="mt-4 bg-white p-5 border-1 text-center">
@@ -179,13 +187,14 @@ function DailyTriviaGame( {playerData, setPlayerData} ) {
                             <MDBModalTitle><img src="https://i.imgur.com/67pcrdT.jpeg" height="50px"/> </MDBModalTitle>
                             <MDBBtn className='btn-close' color='none' onClick={toggleShow}></MDBBtn>
                         </MDBModalHeader>
-                        <MDBModalBody><Login /></MDBModalBody>
+                        <MDBModalBody><Login setBasicModal={setBasicModal} setPlayerData={setPlayerData}
+                                             register={register} setCurrentStats={setCurrentStats}/></MDBModalBody>
 
                         <MDBModalFooter className='justify-content-start'>
                             <MDBBtn className='w-50 bg-warning' onClick={toggleShow}>
                                 Skip Sign In
                             </MDBBtn>
-                            <MDBBtn className='w-50 bg-warning' onClick={toggleShow}>
+                            <MDBBtn className='w-50 bg-warning' onClick={() => setRegister(true)}>
                                 Register
                             </MDBBtn>
                         </MDBModalFooter>

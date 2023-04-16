@@ -62,7 +62,10 @@ router.post('/submitAnswers', async (req, res) => {
             })
         }
     } catch (err) {
-        res.status(500).send('Error submitting answers \n' + err)
+        res.status(500).json({
+            success: false,
+            message: 'Error submitting answers \n' + err
+        })
         console.log(err)
     }
 })

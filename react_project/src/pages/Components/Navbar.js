@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     MDBContainer,
     MDBNavbar,
@@ -10,7 +10,7 @@ import {
     MDBCollapse, MDBIcon
 } from 'mdb-react-ui-kit';
 
-export default function App() {
+export default function App({setBasicModal}) {
 
     return (
         <MDBNavbar expand='lg' light bgColor='white'>
@@ -18,13 +18,8 @@ export default function App() {
                 <MDBNavbarBrand href='#'><img src="https://i.imgur.com/67pcrdT.jpeg" height="50px"/> </MDBNavbarBrand>
                     <MDBNavbarNav>
                         <MDBNavbarItem>
-                            <MDBNavbarLink active aria-current='page' href='#'>
-                                Home
-                            </MDBNavbarLink>
-                        </MDBNavbarItem>
-                        <MDBNavbarItem>
-                            <MDBNavbarLink active aria-current='page' href='#'>
-                                Register
+                            <MDBNavbarLink active aria-current='page' href='#' onClick={() => setBasicModal(true)}>
+                                Login/Register
                             </MDBNavbarLink>
                         </MDBNavbarItem>
                     </MDBNavbarNav>
